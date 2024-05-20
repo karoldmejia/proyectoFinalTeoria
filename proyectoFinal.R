@@ -1,0 +1,167 @@
+install.packages("readxl")
+library(readxl)
+
+install.packages("tidyverse")
+library(tidyverse)
+
+# 1. Gráficos
+install.packages("ggplot2")
+library(ggplot2)
+library(stringr)
+
+datos <- read_excel("C:\\Users\\KAROLD\\Documents\\datosProyectoFinalTeoria.xlsx")
+
+datos$HorasActivasCelular <- as.numeric(datos$HorasActivasCelular)
+datos$PromedioAcademico <- as.numeric(datos$PromedioAcademico)
+datos$EstudioIndependiente <- as.numeric(datos$EstudioIndependiente)
+datos$ActividadesOcio <- as.numeric(datos$ActividadesOcio)
+datos$HorasSueño <- as.numeric(datos$HorasSueño)
+redes_individuales <- datos %>%
+  separate_rows(RedesUsadas, sep = ",\\s*") %>% 
+  mutate(RedesUsadas = str_trim(RedesUsadas))
+
+# Estadísticas
+summary_stats <- lapply(datos, function(x) {
+  if (is.numeric(x)) {
+    stats <- c(Moda = names(sort(table(x), decreasing = TRUE)[1]), 
+               Media = mean(x, na.rm = TRUE),
+               Mediana = median(x, na.rm = TRUE),
+               Desviación_estándar = sd(x, na.rm = TRUE),
+               Rango = max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+  } else {
+    # Si la variable es cualitativa, calcula solo la moda
+    stats <- c(Moda = names(sort(table(x), decreasing = TRUE)[1]),
+               Media = NA,
+               Mediana = NA,
+               Desviación_estándar = NA,
+               Rango = NA)
+  }
+  return(stats)
+})
+
+summary_stats_df <- as.data.frame(do.call(rbind, summary_stats))
+summary_stats_df$Variable <- rownames(summary_stats_df)
+summary_stats_df <- summary_stats_df[, c("Variable", "Moda", "Media", "Mediana", "Desviación_estándar", "Rango")]
+
+
+# Edad
+ggplot(datos, aes(x = Edad)) +
+  geom_histogram(binwidth = 1, fill = "#87CEEB", color = "black") +
+  labs(title = "Distribución de Edades",
+       x = "Edad",
+       y = "Frecuencia")
+
+# Facultad
+ggplot(datos, aes(x = Facultad)) +
+  geom_bar(fill = "#6699CC", color = "black") +
+  labs(title = "Facultades",
+       x = "Facultad",
+       y = "Cantidad")
+
+# HorasActivasCelular
+ggplot(datos, aes(x = HorasActivasCelular)) +
+  geom_histogram(binwidth = 1, fill = "#B0D1DD", color = "black") +
+  scale_x_continuous(breaks = seq(0, 16, by = 1), limits = c(0, 16)) +
+  labs(title = "Promedio de horas activas en el teléfono",
+       x = "Horas activas",
+       y = "Frecuencia")
+ggplot(datos, aes(y = HorasActivasCelular)) +
+  geom_boxplot(fill = "#B0D1DD", color = "black") +
+  labs(title = "Boxplot de horas activas en el teléfono",
+       y = "Horas activas en el teléfono")
+
+# Redes más usadas
+ggplot(redes_individuales, aes(x = fct_infreq(RedesUsadas))) +
+  geom_bar(fill = "#87CEEB", color = "black") +
+  labs(title = "Frecuencia de Uso de Redes Sociales",
+       x = "Red Social",
+       y = "Frecuencia") +
+  theme_minimal()
+
+# Propósito de uso de redes sociales
+datos_separado <- datos %>%
+  separate_rows(UsoRedes, sep = ",\\s*") %>%
+  mutate(UsoRedes = str_trim(UsoRedes))
+
+ggplot(datos_separado, aes(x = str_wrap(UsoRedes, width = 18))) +
+  geom_bar(fill = "#6699CC", color = "black") +
+  labs(title = "Propósito de uso de redes sociales",
+       x = "Propósito",
+       y = "Cantidad") +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
+
+# Promedio académico
+ggplot(datos, aes(x = PromedioAcademico)) +
+  geom_histogram(binwidth = 0.1, fill = "#B0D1DD", color = "black") +
+  scale_x_continuous(breaks = seq(3, 5, by = 0.1), limits = c(2.9, 5.1)) +
+  labs(title = "Distribución del Promedio Académico",
+       x = "Promedio Académico",
+       y = "Frecuencia")
+ggplot(datos, aes(y = PromedioAcademico)) +
+  geom_boxplot(fill = "#B0D1DD", color = "black") +
+  labs(title = "Boxplot del Promedio Académico",
+       y = "Promedio Académico")
+
+# Horas dedicadas a estudio independiente
+ggplot(datos, aes(x = EstudioIndependiente)) +
+  geom_histogram(binwidth = 1, fill = "#87CEEB", color = "black") +
+  scale_x_continuous(breaks = seq(1, 10, by = 1), limits = c(0, 11)) +
+  labs(title = "Distribución de horas dedicadas a estudio independiente",
+       x = "Horas dedicadas",
+       y = "Frecuencia")
+ggplot(datos, aes(y = EstudioIndependiente)) +
+  geom_boxplot(fill = "#87CEEB", color = "black") +
+  labs(title = "Boxplot de horas dedicadas a estudio independiente",
+       y = "Horas dedicadas")
+
+# Horas dedicadas a actividades de ocio
+ggplot(datos, aes(x = ActividadesOcio)) +
+  geom_histogram(binwidth = 1, fill = "#6699CC", color = "black") +
+  scale_x_continuous(breaks = seq(0, 10, by = 1), limits = c(-1, 11)) +
+  labs(title = "Distribución de horas dedicadas a actividades de ocio",
+       x = "Horas dedicadas",
+       y = "Frecuencia")
+ggplot(datos, aes(y = ActividadesOcio)) +
+  geom_boxplot(fill = "#6699CC", color = "black") +
+  labs(title = "Boxplot de horas dedicadas a actividades de ocio",
+       y = "Horas dedicadas")
+
+# Horas de sueño
+ggplot(datos, aes(x = HorasSueño)) +
+  geom_histogram(binwidth = 1, fill = "#B0D1DD", color = "black") +
+  scale_x_continuous(breaks = seq(0, 10, by = 1), limits = c(-1, 11)) +
+  labs(title = "Distribución de horas de sueño",
+       x = "Horas",
+       y = "Frecuencia")
+ggplot(datos, aes(y = HorasSueño)) +
+  geom_boxplot(fill = "#B0D1DD", color = "black") +
+  labs(title = "Boxplot de horas de sueño",
+       y = "Horas")
+
+# Percepción de rendimiento académico
+datos_separado1 <- datos %>%
+  separate_rows(PercepcionRendimiento, sep = ",\\s*") %>%
+  mutate(PercepcionRendimiento = str_trim(PercepcionRendimiento))
+datos_separado1$PercepcionRendimientoEtiq <- gsub(":.*", "", datos_separado1$PercepcionRendimiento)
+ggplot(datos_separado1, aes(x = PercepcionRendimientoEtiq)) +
+  geom_bar(fill = "#87CEEB", color = "black") +
+  labs(title = "Distribución de auto-percepción de rendimiento académico",
+       x = "Percepción",
+       y = "Cantidad") +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
+
+# Percepción de impacto de redes sociales a rendimiento académico
+ggplot(datos, aes(x = str_wrap(PercepcionImpactodeRedesaAcadémico, width = 25))) +
+  geom_bar(fill = "#6699CC", color = "black") +
+  labs(title = "Distribución de auto-percepción de impacto de redes sociales a rendimiento académico",
+       x = "Percepción",
+       y = "Cantidad") +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
+
+# Percepción de concentración
+ggplot(datos, aes(x = str_wrap(PercepcionConcentracion, width = 25))) +
+  geom_bar(fill = "#B0D1DD", color = "black") +
+  labs(title = "Distribución de auto-percepción de tiempo de concentración sin uso de redes sociales",
+       x = "Percepción",
+       y = "Cantidad") +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
